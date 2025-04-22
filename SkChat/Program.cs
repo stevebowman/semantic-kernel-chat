@@ -1,5 +1,4 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 var kernel = Kernel.CreateBuilder()
     .AddAzureOpenAIChatCompletion(
@@ -7,6 +6,8 @@ var kernel = Kernel.CreateBuilder()
         Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT") ?? throw new ArgumentNullException("AZURE_OPENAI_ENDPOINT environment variable is not set."),
         Environment.GetEnvironmentVariable("AZURE_OPENAI_KEY") ?? throw new ArgumentNullException("AZURE_OPENAI_KEY environment variable is not set."))
     .Build();
+
+Console.CancelKeyPress += (_, e) => { e.Cancel = true; Environment.Exit(0); };
 
 Console.WriteLine("Kernel initialized: " + Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT"));
 Console.WriteLine("Deployment name: " + Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT"));
