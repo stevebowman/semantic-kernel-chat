@@ -4,8 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using SkChat.Models;
 using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.Extensions.VectorData;
-using Microsoft.KernelMemory;
-
 
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; Environment.Exit(0); };
 
@@ -37,7 +35,7 @@ while (true)
     var user = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(user)) continue;
 
-    var minScore = 0.7f;
+    var minScore = 0.75f;
 
     var embedGen = kernel.Services.GetRequiredService<ITextEmbeddingGenerationService>();
     var userEmbedding = await embedGen.GenerateEmbeddingAsync(user);
