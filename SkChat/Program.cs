@@ -22,8 +22,9 @@ var kernel = Kernel.CreateBuilder()
 
 var profileCol = await SetupVectorStore(kernel);
 
-// 2 · Load semantic-function plugin
-var plugin  = kernel.CreatePluginFromPromptDirectory("./Plugins/ChatBot");
+var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+var pluginPath = Path.Combine(baseDir, "Plugins", "ChatBot");
+var plugin = kernel.CreatePluginFromPromptDirectory(pluginPath);
 var chatFn  = plugin["Main"]; 
 
 Console.WriteLine("Chat ready. Press Ctrl-C to exit.\n");
@@ -36,6 +37,13 @@ while (true)
     if (string.IsNullOrWhiteSpace(user)) continue;
 
     var minScore = 0.75f;
+
+    // Future (as a lot of this is still in preview):
+    //
+    // 1. Will be possible to configure the vector store with an embedding generator fromt he Kernal, so you
+    //      don't need to manualy generate the embedding for each fact.
+    //
+    // 2. Will be possbile to pass in the min relevance score so the filtering is done on the server side.
 
     var embedGen = kernel.Services.GetRequiredService<ITextEmbeddingGenerationService>();
     var userEmbedding = await embedGen.GenerateEmbeddingAsync(user);
@@ -58,7 +66,7 @@ while (true)
     }
     
     var kernelArgs = new KernelArguments { ["input"] = user };
-    var result = await chatFn.InvokeAsync(kernel, kernelArgs);   // <- correct signature
+    var result = await chatFn.InvokeAsync(kernel, kernelArgs);   
     Console.WriteLine($"Bot: {result.GetValue<string>()}");
 }
 
@@ -68,6 +76,8 @@ static string GetEnv(string name) =>
 
 async Task<IVectorStoreRecordCollection<Guid, Fact>> SetupVectorStore(Kernel kernel)
 {
+    Console.WriteLine("Adding profile facts to vector store.");
+
     var vectorStore = new QdrantVectorStore(new Qdrant.Client.QdrantClient("localhost", 6334));
 
     var profileCol = vectorStore.GetCollection<Guid, Fact>("profile");
@@ -79,13 +89,13 @@ async Task<IVectorStoreRecordCollection<Guid, Fact>> SetupVectorStore(Kernel ker
 
     var profileFacts = new List<Fact>
     {
-        new Fact { Id = new Guid("6297a907-3973-479f-ab18-fd2702dfebbb"), Text = "My name is Steve." },
-        new Fact { Id = new Guid("b999806b-9fe5-4526-803b-085bb83791b3"), Text = "I live in Hull, UK." },
-        new Fact { Id = new Guid("fe192bca-c7e8-40a9-bdd0-68267ecfdaef"), Text = "I'm interested in physics and LLMs." },
-        new Fact { Id = new Guid("0ad22372-4adc-45e5-b28d-71ee2464988d"), Text = "I like drinking tea." },
-        new Fact { Id = new Guid("d57aaf37-3ca0-4684-a855-49431e4bafa7"), Text = "I like Karol G." },
-        new Fact { Id = new Guid("28132886-1f72-41d7-aff7-242b35edd4d7"), Text = "I support Hull City, Atletico Nacional and Banfield." },
-        new Fact { Id = new Guid("eb8fb372-7202-4b96-8aea-60722a7b517d"), Text = "I hate Leeds United." }
+        new() { Id = new Guid("6297a907-3973-479f-ab18-fd2702dfebbb"), Text = "My name is Steve." },
+        new() { Id = new Guid("b999806b-9fe5-4526-803b-085bb83791b3"), Text = "I live in Hull, UK." },
+        new() { Id = new Guid("fe192bca-c7e8-40a9-bdd0-68267ecfdaef"), Text = "I'm interested in physics and LLMs." },
+        new() { Id = new Guid("0ad22372-4adc-45e5-b28d-71ee2464988d"), Text = "I like drinking tea." },
+        new() { Id = new Guid("d57aaf37-3ca0-4684-a855-49431e4bafa7"), Text = "I like Karol G." },
+        new() { Id = new Guid("28132886-1f72-41d7-aff7-242b35edd4d7"), Text = "I support Hull City, Atletico Nacional and Banfield." },
+        new() { Id = new Guid("eb8fb372-7202-4b96-8aea-60722a7b517d"), Text = "I hate Leeds United." }
     };
 
     foreach (var fact in profileFacts)
@@ -95,17 +105,7 @@ async Task<IVectorStoreRecordCollection<Guid, Fact>> SetupVectorStore(Kernel ker
         await profileCol.UpsertAsync(fact);
     }
 
-    Console.WriteLine("Profile facts stored.");
-
-    // var queryText = "What do I like?";
-    // var queryEmbedding = await embedGen.GenerateEmbeddingAsync(queryText);
-
-    // var results = profileCol.SearchEmbeddingAsync(
-    //     queryEmbedding,   // pre-generated embedding
-    //     top: 1);
-
-    // var firstResult = await results.FirstOrDefaultAsync();
-    // Console.WriteLine(firstResult?.Record.Text);
+    Console.WriteLine($"{profileFacts.Count} profile facts stored.");
 
     return profileCol;
 }
