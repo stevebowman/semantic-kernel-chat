@@ -5,7 +5,7 @@ namespace SkChat.Models;
 public class Fact
 {
     [VectorStoreRecordKey]
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; } 
 
     [VectorStoreRecordData(IsFullTextIndexed = true)]
     public string Text { get; set; } = "";
