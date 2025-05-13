@@ -26,6 +26,10 @@ builder.Plugins.AddFromType<CalcSkill>("math");
 
 var kernel = builder.Build();
 
+foreach (var p in kernel.Plugins)
+    foreach (var f in p)
+        Console.WriteLine($"Loaded skill: {p.Name}.{f.Name}");
+
 // Let OpenAI choose wether to excute one of our skills plugins automatically
 OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new() 
 {
