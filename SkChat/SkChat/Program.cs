@@ -2,11 +2,10 @@
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Microsoft.Extensions.DependencyInjection;
 using SkChat.Models;
-using Microsoft.SemanticKernel.AI.Embeddings;
+using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.Extensions.VectorData;
 using SkChat.Skills;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using Microsoft.SemanticKernel.Embeddings;
 
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; Environment.Exit(0); };
 
@@ -31,7 +30,7 @@ foreach (var p in kernel.Plugins)
     foreach (var f in p)
         Console.WriteLine($"Loaded skill: {p.Name}.{f.Name}");
 
-// Let OpenAI choose wether to excute one of our skills plugins automatically
+// Let OpenAI choose whether to excute one of our skills plugins automatically
 OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new() 
 {
     FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
@@ -40,7 +39,7 @@ OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new()
 // Set up vector store with facts about the user
 var profileCol = await SetupVectorStore(kernel);
 
-// Load our chat bot plugib
+// Load our chat bot plugin
 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
 var pluginPath = Path.Combine(baseDir, "Plugins", "ChatBot");
 var plugin = kernel.CreatePluginFromPromptDirectory(pluginPath);
@@ -66,10 +65,10 @@ while (true)
 
     var embedGen = kernel.Services.GetRequiredService<ITextEmbeddingGenerationService>();
     var userEmbedding = await embedGen.GenerateEmbeddingAsync(user);
-    var recalls = await profileCol.SearchEmbeddingAsync(userEmbedding.Data, 10)
-                            .Where(r => r.Score >= minScore)                   
-                            .ToListAsync();
-
+    var recalls = await profileCol.SearchEmbeddingAsync(userEmbedding, 10)
+        .Where(r => r.Score >= minScore)
+        .ToListAsync();
+    
     // Log the recalls and scoresWhat
     foreach (var recall in recalls)
     {
@@ -121,7 +120,7 @@ async Task<IVectorStoreRecordCollection<Guid, Fact>> SetupVectorStore(Kernel ker
     foreach (var fact in profileFacts)
     {
         var embedding = await embedGen.GenerateEmbeddingAsync(fact.Text);
-        fact.Embedding = embedding.Data;
+        fact.Embedding = embedding;
         await profileCol.UpsertAsync(fact);
     }
 

@@ -1,10 +1,8 @@
-﻿using Microsoft.SemanticKernel.AI.Embeddings;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Qdrant.Client;
 using SkChat.Models;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Embeddings;
 
 public class ProfileTests
@@ -35,12 +33,12 @@ public class ProfileTests
 
         var fact = new Fact { Id = new Guid("2082b425-d25d-4963-a28d-2c191d554110"), Text = "Testing recall logic." };
         var embedding = await embedGen.GenerateEmbeddingAsync(fact.Text);
-        fact.Embedding = embedding.Data;
+        fact.Embedding = embedding;
 
         await collection.UpsertAsync(fact);
 
         var queryVec = await embedGen.GenerateEmbeddingAsync("What is this about?");
-        var hits = await collection.SearchEmbeddingAsync(queryVec.Data, 1).ToListAsync();
+        var hits = collection.SearchEmbeddingAsync(queryVec, 1).ToBlockingEnumerable().ToList();
 
         Assert.Contains(hits, h => h.Record.Text.Contains("Testing recall"));
     }
