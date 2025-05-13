@@ -2,10 +2,11 @@
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Microsoft.Extensions.DependencyInjection;
 using SkChat.Models;
-using Microsoft.SemanticKernel.Embeddings;
+using Microsoft.SemanticKernel.AI.Embeddings;
 using Microsoft.Extensions.VectorData;
 using SkChat.Skills;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Embeddings;
 
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; Environment.Exit(0); };
 
@@ -65,7 +66,7 @@ while (true)
 
     var embedGen = kernel.Services.GetRequiredService<ITextEmbeddingGenerationService>();
     var userEmbedding = await embedGen.GenerateEmbeddingAsync(user);
-    var recalls = await profileCol.SearchEmbeddingAsync(userEmbedding, 10)
+    var recalls = await profileCol.SearchEmbeddingAsync(userEmbedding.Data, 10)
                             .Where(r => r.Score >= minScore)                   
                             .ToListAsync();
 
@@ -120,7 +121,7 @@ async Task<IVectorStoreRecordCollection<Guid, Fact>> SetupVectorStore(Kernel ker
     foreach (var fact in profileFacts)
     {
         var embedding = await embedGen.GenerateEmbeddingAsync(fact.Text);
-        fact.Embedding = embedding;
+        fact.Embedding = embedding.Data;
         await profileCol.UpsertAsync(fact);
     }
 
