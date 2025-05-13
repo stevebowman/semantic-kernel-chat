@@ -4,11 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 using SkChat.Models;
 using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.Extensions.VectorData;
+using SkChat.Skills;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; Environment.Exit(0); };
 
 #pragma warning disable SKEXP0010 // AddAzureOpenAITextEmbeddingGeneration is for evaluation only
-var kernel = Kernel.CreateBuilder()
+#pragma warning disable SKEXP0001
+var builder = Kernel.CreateBuilder()
     .AddAzureOpenAIChatCompletion(
         deploymentName  : GetEnv("AZURE_OPENAI_DEPLOYMENT"),
         endpoint        : GetEnv("AZURE_OPENAI_ENDPOINT"),
@@ -16,12 +19,23 @@ var kernel = Kernel.CreateBuilder()
     .AddAzureOpenAITextEmbeddingGeneration(
         deploymentName  : GetEnv("AZURE_OPENAI_DEPLOYMENT_EMBEDDING"),
         endpoint        : GetEnv("AZURE_OPENAI_ENDPOINT"),
-        apiKey          : GetEnv("AZURE_OPENAI_KEY"))   
-    .Build();
-#pragma warning disable SKEXP0001
+        apiKey          : GetEnv("AZURE_OPENAI_KEY"));
 
+// Plugins that can be called to perform specific tasks. 
+builder.Plugins.AddFromType<CalcSkill>("math");  
+
+var kernel = builder.Build();
+
+// Let OpenAI choose wether to excute one of our skills plugins automatically
+OpenAIPromptExecutionSettings openAIPromptExecutionSettings = new() 
+{
+    FunctionChoiceBehavior = FunctionChoiceBehavior.Auto()
+};
+
+// Set up vector store with facts about the user
 var profileCol = await SetupVectorStore(kernel);
 
+// Load our chat bot plugib
 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
 var pluginPath = Path.Combine(baseDir, "Plugins", "ChatBot");
 var plugin = kernel.CreatePluginFromPromptDirectory(pluginPath);
@@ -65,8 +79,9 @@ while (true)
         user = context + "\n\n" + user;
     }
     
-    var kernelArgs = new KernelArguments { ["input"] = user };
-    var result = await chatFn.InvokeAsync(kernel, kernelArgs);   
+    var kernelArgs = new KernelArguments(openAIPromptExecutionSettings) { ["input"] = user };
+    var result = await chatFn.InvokeAsync(kernel, kernelArgs);  
+
     Console.WriteLine($"Bot: {result.GetValue<string>()}");
 }
 

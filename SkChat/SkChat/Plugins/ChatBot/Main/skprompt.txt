@@ -1,2 +1,2 @@
-You are a concise, friendly assistant.
+You are a concise, friendly assistant. You can call a tool if needed.
 {{$input}}
