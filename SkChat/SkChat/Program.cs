@@ -6,6 +6,7 @@ using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.Extensions.VectorData;
 using SkChat.Skills;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using SkChat.Bench;
 
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; Environment.Exit(0); };
 
@@ -54,6 +55,13 @@ while (true)
     Console.Write("> ");
     var user = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(user)) continue;
+
+    if (user.StartsWith("bench: ", StringComparison.OrdinalIgnoreCase))
+    {
+        var prompt = user[7..];
+        await RunBenchmarks(kernel, chatFn, prompt);
+        continue;
+    }
 
     var minScore = 0.75f;
 
@@ -128,4 +136,25 @@ async Task<IVectorStoreRecordCollection<Guid, Fact>> SetupVectorStore(Kernel ker
     Console.WriteLine($"{profileFacts.Count} profile facts stored.");
 
     return profileCol;
+}
+
+static async Task RunBenchmarks(Kernel kernel, KernelFunction chatFn, string prompt)
+{
+    async Task PlannerRun()
+    {
+        var settings = new OpenAIPromptExecutionSettings
+        { FunctionChoiceBehavior = FunctionChoiceBehavior.Auto() };
+        await chatFn.InvokeAsync(kernel, new(settings) { ["input"] = prompt });
+    }
+
+    async Task ManualRun()
+    {
+        await chatFn.InvokeAsync(kernel, new() { ["input"] = prompt });
+    }
+
+    Console.WriteLine("Planner path: {0:F0} ms",
+        await Bench.TimeAsync(PlannerRun));
+
+    Console.WriteLine("Manual path : {0:F0} ms",
+        await Bench.TimeAsync(ManualRun));
 }
