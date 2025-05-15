@@ -22,7 +22,8 @@ var builder = Kernel.CreateBuilder()
         apiKey          : GetEnv("AZURE_OPENAI_KEY"));
 
 // Plugins that can be called to perform specific tasks. 
-builder.Plugins.AddFromType<CalcSkill>("math");  
+builder.Plugins.AddFromType<CalcSkill>("math"); 
+builder.Plugins.AddFromType<WebSearchSkill>("web"); 
 
 var kernel = builder.Build();
 

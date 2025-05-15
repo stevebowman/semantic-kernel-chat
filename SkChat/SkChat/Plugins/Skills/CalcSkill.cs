@@ -6,6 +6,7 @@ namespace SkChat.Skills;
 public class CalcSkill
 {
     [KernelFunction("add")]
+    [Description("Add two numbers.")]
     public static double Add(
         [Description("first number")]  double x,
         [Description("second number")] double y)
@@ -14,6 +15,7 @@ public class CalcSkill
         return x + y;
     }
 
+    [Description("Work out a given percentage of a value.")]
     [KernelFunction("percentage")]
     public static double Percentage(
         [Description("value")]   double value,
@@ -23,6 +25,7 @@ public class CalcSkill
         return value * percent / 100.0;
     }
 
+    [Description("Get the equare root of a numbers.")]
     [KernelFunction("sqrt")]
     public static double Sqrt(
         [Description("number")] double n)
