@@ -67,7 +67,7 @@ while (true)
 
     // Future (as a lot of this is still in preview):
     //
-    // 1. Will be possible to configure the vector store with an embedding generator fromt he Kernal, so you
+    // 1. Will be possible to configure the vector store with an embedding generator from the Kernal, so you
     //      don't need to manualy generate the embedding for each fact.
     //
     // 2. Will be possbile to pass in the min relevance score so the filtering is done on the server side.
